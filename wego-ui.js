@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var VERSION = '2.0.0';
+  var VERSION = '2.0.1';
   if (window.__wegoUI === VERSION) return;
   /* 예전 버전이 페이지에 남아 먼저 실행됐다면 그 스타일을 걷어내고 이 버전으로 교체 */
   var oldStyle = document.getElementById('wego-ui-style');
@@ -233,7 +233,17 @@
     P + '.m_brand h2{background-color:var(--wg-navy);border-radius:12px 12px 0 0;font-weight:600}',
     P + '.m_brand .m_br_inner{border-color:var(--wg-line);border-radius:0 0 12px 12px}',
     P + '.m_brand .m_br_inner li{border-left-color:var(--wg-line)}',
-    P + '.m_brand .slick-arrow{border-radius:8px}'
+    P + '.m_brand .slick-arrow{border-radius:8px}',
+    /* 하단 고객서비스: 이미지 타일을 아이콘+글자 타일로 교체 (initSvcTiles) */
+    P + '.cs_svc li.wg-svc{height:96px;margin-bottom:8px}',
+    P + '.cs_svc li.wg-svc>img,' + P + '.cs_svc li.wg-svc>a>img{display:none}',
+    P + '.cs_svc .wg-svc-t{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;width:100%;height:96px;box-sizing:border-box;border:1px solid var(--wg-line);border-radius:14px;background:#fff;color:var(--wg-navy);text-decoration:none!important;transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s,background-color .2s,border-color .2s,color .2s}',
+    P + '.cs_svc .wg-svc-t svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}',
+    P + '.cs_svc .wg-svc-t span{font-size:13px;font-weight:600;letter-spacing:-.3px;color:#374151;transition:color .2s}',
+    P + '.cs_svc a.wg-svc-t:hover{transform:translateY(-4px);border-color:transparent;background:linear-gradient(135deg,var(--wg-navy),#1d4fd8 60%,var(--wg-blue));color:#fff;box-shadow:0 12px 24px rgba(29,79,216,.3)}',
+    P + '.cs_svc a.wg-svc-t:hover span{color:#fff}',
+    P + '.cs_svc div.wg-svc-t{background:var(--wg-bg);border-color:var(--wg-bg);color:#8a93a3}',
+    P + '.cs_svc div.wg-svc-t span{color:#8a93a3}'
   ];
 
   /* ---------------------------------------------------------------- 모바일 */
@@ -636,8 +646,51 @@
     upd();
   }
 
+  /* PC 하단 고객서비스: 링크 주소로 항목을 알아내 아이콘 타일로 바꿉니다.
+   * 모르는 항목은 원래 이미지를 그대로 둡니다. */
+  function initSvcTiles() {
+    var I = {
+      join: '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-3.9 3.1-7 7-7s7 3.1 7 7M19 8v6M16 11h6"/>',
+      edit: '<circle cx="9" cy="8" r="4"/><path d="M2 21c0-3.9 3.1-7 7-7 1 0 2 .2 2.9 .6M14.5 20.5l.8-3.3 5.2-5.2 2.5 2.5-5.2 5.2z"/>',
+      notice: '<path d="M3 10v4h3l6 4V6L6 10H3zM16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12"/>',
+      qna: '<path d="M4 5h16v11H9l-5 4zM8.5 9.5h7M8.5 12.5h4"/>',
+      faq: '<circle cx="12" cy="12" r="9"/><path d="M9.5 9.5a2.5 2.5 0 1 1 5 0c0 1.7-2.5 2-2.5 4M12 17v.01"/>',
+      note: '<path d="M12 3l10 18H2zM12 10v5M12 18v.01"/>'
+    };
+    var MAP = [
+      [/register_mod/, 'edit', '정보변경'],
+      [/register\.php/, 'join', '회원가입'],
+      [/boardid=13/, 'notice', '공지사항'],
+      [/qna_list/, 'qna', 'Q&A'],
+      [/faq/, 'faq', 'FAQ']
+    ];
+    $all('.ft_cs .cs_svc ul li').forEach(function (li) {
+      if (li.className.indexOf('wg-svc') >= 0) return;
+      var a = li.querySelector('a'), hit = null;
+      if (a) {
+        var href = a.getAttribute('href') || '';
+        for (var i = 0; i < MAP.length; i++) if (MAP[i][0].test(href)) { hit = MAP[i]; break; }
+        if (!hit) return;
+      } else {
+        hit = [null, 'note', '유의사항'];
+      }
+      var box = a || doc.createElement('div');
+      var svg = '<svg viewBox="0 0 24 24" aria-hidden="true">' + I[hit[1]] + '</svg>';
+      var wrap = doc.createElement('span');
+      wrap.style.display = 'contents';
+      wrap.innerHTML = svg + '<span></span>';
+      wrap.lastChild.appendChild(doc.createTextNode(hit[2]));
+      while (wrap.firstChild) box.appendChild(wrap.firstChild);
+      box.className += ' wg-svc-t';
+      if (!a) li.appendChild(box);
+      li.className += ' wg-svc';
+    });
+  }
+
   function enhance() {
-    if (THEME.dynamic === false || !doc.body) return;
+    if (!doc.body) return;
+    if (!isMobile) { try { initSvcTiles(); } catch (e) {} }
+    if (THEME.dynamic === false) return;
     try { initProgress(); } catch (e) {}
     try { initReveal(); } catch (e) {}
     if (page === 'view') {
