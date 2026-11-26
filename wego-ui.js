@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var VERSION = '2.0.2';
+  var VERSION = '2.0.3';
   if (window.__wegoUI === VERSION) return;
   /* 예전 버전이 페이지에 남아 먼저 실행됐다면 그 스타일을 걷어내고 이 버전으로 교체 */
   var oldStyle = document.getElementById('wego-ui-style');
@@ -363,6 +363,7 @@
   var dynCommon = [
     ':root{--wg-accent:' + (THEME.accent || '#ffb800') + '}',
     '@keyframes wgUp{from{opacity:0;transform:translateY(18px)}to{opacity:1;transform:none}}',
+    '@keyframes wgFade{from{opacity:0}to{opacity:1}}',
     '@keyframes wgShine{from{transform:translateX(-120%) skewX(-20deg)}to{transform:translateX(320%) skewX(-20deg)}}',
     '@keyframes wgPulse{0%{box-shadow:0 0 0 0 rgba(47,107,255,.45)}100%{box-shadow:0 0 0 14px rgba(47,107,255,0)}}',
     /* 스크롤 진행 바 */
@@ -412,7 +413,7 @@
     P + '#hd_sch .sch_frm .sch_submit:hover{transform:scale(1.08) rotate(-8deg)}',
     /* 메인 */
     P + '#mbn_wrap{border-radius:0 0 44px 44px}',
-    P + '#container{animation:wgUp .6s ' + EASE + ' both}',
+    P + '#container{animation:wgFade .5s ease}',
     P + '.mtit .stxt{display:table;margin:0 auto 12px;background:var(--wg-navy);color:#fff!important;letter-spacing:.5px}',
     P + '.mtit .txt{margin-top:0}',
     P + '.mtit .txt{font-size:36px;letter-spacing:-1px;position:relative;display:inline-block!important;padding-bottom:16px}',
@@ -485,7 +486,7 @@
   ];
 
   var dynMo = [
-    M + '#container{animation:wgUp .5s ' + EASE + ' both}',
+    M + '#container{animation:wgFade .45s ease}',
     M + '#hd_sch section{border-color:transparent;background:linear-gradient(#fff,#fff) padding-box,' + GRAD + ' border-box}',
     M + '#hd_sch #sch_submit{width:34px;height:34px;margin:2px;border-radius:50%;color:#fff;background:' + GRAD + ';font-size:15px;padding:0}',
     M + '#hd_sch .search_inp{width:calc(100% - 40px)}',
@@ -543,6 +544,22 @@
     M + '.btn_top,' + M + '.btn_bottom{transition:transform .2s}',
     M + '.btn_top:active,' + M + '.btn_bottom:active{transform:scale(.9)}'
   ];
+
+  /* PC·모바일 공통으로 쓰는 SNS 링크 스타일 */
+  common = common.concat([
+    'html.wg .wg-sns{display:flex;gap:8px;margin-top:14px;padding:2px 0 4px}',
+    'html.wg .wg-sns-a{display:inline-flex;align-items:center;gap:7px;text-decoration:none!important;transition:background .2s,color .2s,border-color .2s,transform .2s,box-shadow .2s}',
+    'html.wg .wg-sns-a svg{width:18px;height:18px;flex:none;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}',
+    'html.wg .wg-sns .wg-sns-a{height:36px;padding:0 15px 0 12px;border:1px solid #dfe4ee;border-radius:999px;background:#fff;color:#374151;font-size:13px;font-weight:600;letter-spacing:-.3px}',
+    'html.wg .wg-sns .wg-sns-a:hover{color:#fff;border-color:transparent;transform:translateY(-2px)}',
+    'html.wg .wg-sns-insta:hover{background:linear-gradient(45deg,#f58529,#dd2a7b 55%,#8134af);box-shadow:0 8px 18px rgba(221,42,123,.3)}',
+    'html.wg .wg-sns-blog:hover{background:#03c75a;box-shadow:0 8px 18px rgba(3,199,90,.3)}',
+    M + '.wg-sns{justify-content:center;margin:0;padding:16px 0 4px}',
+    P + '#tnb_inner .tnb_ul li.wg-sns-top{padding:0 0 0 12px;height:38px;display:flex;align-items:center;gap:6px}',
+    P + '#tnb_inner .tnb_ul li.wg-sns-top a{width:26px;height:26px;padding:0;line-height:1;justify-content:center;border-radius:50%;background:#eef1f6;color:#5b6475}',
+    P + '#tnb_inner .tnb_ul li.wg-sns-top a svg{width:15px;height:15px}',
+    P + '#tnb_inner .tnb_ul li.wg-sns-top a:hover{color:#fff;transform:translateY(-1px)}'
+  ]);
 
   if (THEME.dynamic !== false) {
     common = common.concat(dynCommon);
@@ -668,11 +685,51 @@
   var NOTICE = {
     title: '견적 요청 시 유의사항',
     lines: [
-      '위고기프트는 <b>조금이라도 더 좋은 가격</b>을 드리기 위해, 견적 요청을 받으면 생산업체와 단가를 직접 조율합니다.',
+      '위고기프트는 <b>조금이라도 더 좋은 가격</b>을 드리기 위해 생산업체와 단가를 직접 조율하며, 견적 요청을 순차적으로 처리하고 있습니다.',
       '이 과정 때문에 <b>견적 회신이 다소 늦어질 수 있는 점</b> 너그러이 양해 부탁드립니다.'
     ],
     note: '급하신 경우 <a href="tel:010-2849-5945">010-2849-5945</a> 또는 카카오톡으로 연락 주시면 먼저 안내해 드리겠습니다.'
   };
+  /* 마침표 뒤에 문장이 이어지면 줄을 바꿉니다. */
+  function brk(t) { return t.replace(/([.!?])\s+(?=[^\s<])/g, '$1<br>'); }
+
+  /* SNS 링크: PC 는 상단 유틸바 + 하단 회사정보, 모바일은 하단 메뉴 아래 */
+  var SNS = [
+    { key: 'insta', label: '인스타그램', url: 'https://www.instagram.com/wego.gift/',
+      icon: '<rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.3" cy="6.7" r=".6" fill="currentColor"/>' },
+    { key: 'blog', label: '블로그', url: 'https://blog.naver.com/wegogift',
+      icon: '<path d="M5 4h14a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-5l-2 3-2-3H5a2 2 0 0 1-2-2V6a2 2 0 0 1 2-2zM7.5 9h9M7.5 12.5h5.5"/>' }
+  ];
+  function snsLink(s, withLabel) {
+    var a = doc.createElement('a');
+    a.href = s.url; a.target = '_blank'; a.rel = 'noopener';
+    a.className = 'wg-sns-a wg-sns-' + s.key;
+    a.title = '위고기프트 ' + s.label;
+    a.setAttribute('aria-label', '위고기프트 ' + s.label);
+    a.innerHTML = '<svg viewBox="0 0 24 24" aria-hidden="true">' + s.icon + '</svg>';
+    if (withLabel) { var sp = doc.createElement('span'); sp.appendChild(doc.createTextNode(s.label)); a.appendChild(sp); }
+    return a;
+  }
+  function initSns() {
+    if (doc.querySelector('.wg-sns')) return;
+    var row = doc.createElement('div');
+    row.className = 'wg-sns';
+    SNS.forEach(function (s) { row.appendChild(snsLink(s, true)); });
+    if (isMobile) {
+      var menu = doc.querySelector('#ft .ft_menu');
+      if (menu && menu.parentNode) menu.parentNode.insertBefore(row, menu.nextSibling);
+      return;
+    }
+    var co = doc.querySelector('#ft .company li');
+    if (co) co.appendChild(row);
+    var top = doc.querySelector('#tnb_inner .tnb_ul');
+    if (top) {
+      var li = doc.createElement('li');
+      li.className = 'wg-sns-top';
+      SNS.forEach(function (s) { li.appendChild(snsLink(s, false)); });
+      top.appendChild(li);
+    }
+  }
   function openNotice() {
     if (doc.getElementById('wg-modal')) return;
     var prev = doc.activeElement;
@@ -683,8 +740,8 @@
     m.innerHTML = '<div class="wg-md"><button type="button" class="wg-md-x" aria-label="닫기">&times;</button>' +
       '<div class="wg-md-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2zM12 10v5M12 18v.01"/></svg></div>' +
       '<h3>' + NOTICE.title + '</h3>' +
-      NOTICE.lines.map(function (t) { return '<p>' + t + '</p>'; }).join('') +
-      '<p class="wg-md-note">' + NOTICE.note + '</p>' +
+      NOTICE.lines.map(function (t) { return '<p>' + brk(t) + '</p>'; }).join('') +
+      '<p class="wg-md-note">' + brk(NOTICE.note) + '</p>' +
       '<button type="button" class="wg-md-ok">확인</button></div>';
     function close() {
       doc.removeEventListener('keydown', onKey);
@@ -756,6 +813,7 @@
   function enhance() {
     if (!doc.body) return;
     if (!isMobile) { try { initSvcTiles(); } catch (e) {} }
+    try { initSns(); } catch (e) {}
     if (THEME.dynamic === false) return;
     try { initProgress(); } catch (e) {}
     try { initReveal(); } catch (e) {}
