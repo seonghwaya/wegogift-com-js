@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var VERSION = '2.0.3';
+  var VERSION = '2.0.4';
   if (window.__wegoUI === VERSION) return;
   /* 예전 버전이 페이지에 남아 먼저 실행됐다면 그 스타일을 걷어내고 이 버전으로 교체 */
   var oldStyle = document.getElementById('wego-ui-style');
@@ -479,6 +479,13 @@
     P + '.vi_rel dl:hover{transform:translateY(-6px)}',
     P + '#wg-buybar{top:48px;transform:translateY(-110%);background:rgba(255,255,255,.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 10px 30px rgba(7,31,87,.14)}',
     P + '#wg-buybar .wg-bb-in{width:1260px;padding:10px 0}',
+    /* 그림자·떠오름이 부모 박스에서 잘리지 않게: 자르는 대신 float 만 감싸도록 변경 */
+    P + '.pr_desc,' + P + '.pg_best,' + P + '.cate_pick,' + P + '.con_bn01,' + P + '.con_bn02,' + P + '.cont_wrap,' + P + '.company{overflow:visible;display:flow-root}',
+    P + '.pr_desc ul,' + P + '.company ul,' + P + '.cate_pick ul,' + P + '.con_bn01 .bnr02 ul{overflow:visible;display:flow-root}',
+    P + '.pr_desc li,' + P + '.company li{overflow:visible}',
+    P + '.con_bn01 .bnr02,' + P + '.vi_info,' + P + '.vi_img_bx,' + P + '.vi_txt_bx{overflow:visible}',
+    P + '.mdpick .slick-list{padding:20px 0 48px!important;margin:-20px 0 -48px}',
+    P + '.vi_rel .swiper{padding:10px 0 0;margin-top:-10px}',
     /* 우측 퀵메뉴 */
     P + '#qcr .qcrM li{transition:transform .2s}',
     P + '#qcr .qcrM li:hover{transform:translateX(-4px)}',
