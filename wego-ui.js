@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var VERSION = '2.0.1';
+  var VERSION = '2.0.2';
   if (window.__wegoUI === VERSION) return;
   /* 예전 버전이 페이지에 남아 먼저 실행됐다면 그 스타일을 걷어내고 이 버전으로 교체 */
   var oldStyle = document.getElementById('wego-ui-style');
@@ -240,10 +240,28 @@
     P + '.cs_svc .wg-svc-t{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:9px;width:100%;height:96px;box-sizing:border-box;border:1px solid var(--wg-line);border-radius:14px;background:#fff;color:var(--wg-navy);text-decoration:none!important;transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s,background-color .2s,border-color .2s,color .2s}',
     P + '.cs_svc .wg-svc-t svg{width:28px;height:28px;fill:none;stroke:currentColor;stroke-width:1.6;stroke-linecap:round;stroke-linejoin:round}',
     P + '.cs_svc .wg-svc-t span{font-size:13px;font-weight:600;letter-spacing:-.3px;color:#374151;transition:color .2s}',
-    P + '.cs_svc a.wg-svc-t:hover{transform:translateY(-4px);border-color:transparent;background:linear-gradient(135deg,var(--wg-navy),#1d4fd8 60%,var(--wg-blue));color:#fff;box-shadow:0 12px 24px rgba(29,79,216,.3)}',
-    P + '.cs_svc a.wg-svc-t:hover span{color:#fff}',
-    P + '.cs_svc div.wg-svc-t{background:var(--wg-bg);border-color:var(--wg-bg);color:#8a93a3}',
-    P + '.cs_svc div.wg-svc-t span{color:#8a93a3}'
+    P + '.cs_svc .wg-svc-t{cursor:pointer}',
+    P + '.cs_svc .wg-svc-t svg{transition:transform .3s cubic-bezier(.2,.7,.2,1)}',
+    P + '.cs_svc .wg-svc-t:hover{border-color:transparent;background:linear-gradient(135deg,var(--wg-navy),#1d4fd8 60%,var(--wg-blue));color:#fff}',
+    P + '.cs_svc .wg-svc-t:hover span{color:#fff}',
+    P + '.cs_svc .wg-svc-t:hover svg{transform:translateY(-3px) scale(1.12)}',
+    P + '.cs_svc .wg-svc-t:focus-visible{outline:2px solid var(--wg-blue);outline-offset:2px}',
+    /* 유의사항 팝업 */
+    '#wg-modal{position:fixed;inset:0;z-index:100000;display:flex;align-items:center;justify-content:center;padding:20px;background:rgba(7,18,45,.55);-webkit-backdrop-filter:blur(4px);backdrop-filter:blur(4px);opacity:0;transition:opacity .25s}',
+    '#wg-modal.on{opacity:1}',
+    '#wg-modal .wg-md{position:relative;width:100%;max-width:440px;box-sizing:border-box;padding:34px 32px 28px;border-radius:22px;background:#fff;box-shadow:0 30px 70px rgba(7,18,45,.35);font-family:var(--wg-font);text-align:center;transform:translateY(18px) scale(.97);transition:transform .3s cubic-bezier(.2,.7,.2,1)}',
+    '#wg-modal.on .wg-md{transform:none}',
+    '#wg-modal .wg-md-ic{display:flex;align-items:center;justify-content:center;width:60px;height:60px;margin:0 auto 16px;border-radius:50%;background:linear-gradient(135deg,var(--wg-navy),#1d4fd8 60%,var(--wg-blue));color:#fff}',
+    '#wg-modal .wg-md-ic svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}',
+    '#wg-modal h3{margin:0 0 14px;font-size:21px;font-weight:800;letter-spacing:-.5px;color:var(--wg-ink)}',
+    '#wg-modal p{margin:0 0 10px;font-size:14.5px;line-height:1.7;color:#4b5563;word-break:keep-all}',
+    '#wg-modal p b{color:var(--wg-navy);font-weight:700}',
+    '#wg-modal .wg-md-note{margin-top:16px;padding:13px 14px;border-radius:12px;background:var(--wg-bg);font-size:13.5px}',
+    '#wg-modal .wg-md-note a{color:var(--wg-navy);font-weight:800;text-decoration:none}',
+    '#wg-modal .wg-md-ok{display:block;width:100%;height:50px;margin-top:20px;border:0;border-radius:13px;background:linear-gradient(135deg,var(--wg-navy),#1d4fd8 60%,var(--wg-blue));color:#fff;font-size:15px;font-weight:700;font-family:var(--wg-font);cursor:pointer;transition:box-shadow .2s,transform .2s}',
+    '#wg-modal .wg-md-ok:hover{transform:translateY(-2px);box-shadow:0 12px 24px rgba(29,79,216,.32)}',
+    '#wg-modal .wg-md-x{position:absolute;top:14px;right:14px;width:34px;height:34px;border:0;border-radius:50%;background:transparent;color:#9aa1ad;font-size:22px;line-height:34px;cursor:pointer;transition:background-color .15s,color .15s}',
+    '#wg-modal .wg-md-x:hover{background:var(--wg-bg);color:var(--wg-ink)}'
   ];
 
   /* ---------------------------------------------------------------- 모바일 */
@@ -646,6 +664,46 @@
     upd();
   }
 
+  /* 유의사항 팝업. 문구는 아래 NOTICE 만 고치면 됩니다. */
+  var NOTICE = {
+    title: '견적 요청 시 유의사항',
+    lines: [
+      '위고기프트는 <b>조금이라도 더 좋은 가격</b>을 드리기 위해, 견적 요청을 받으면 생산업체와 단가를 직접 조율합니다.',
+      '이 과정 때문에 <b>견적 회신이 다소 늦어질 수 있는 점</b> 너그러이 양해 부탁드립니다.'
+    ],
+    note: '급하신 경우 <a href="tel:010-2849-5945">010-2849-5945</a> 또는 카카오톡으로 연락 주시면 먼저 안내해 드리겠습니다.'
+  };
+  function openNotice() {
+    if (doc.getElementById('wg-modal')) return;
+    var prev = doc.activeElement;
+    var m = doc.createElement('div');
+    m.id = 'wg-modal';
+    m.setAttribute('role', 'dialog');
+    m.setAttribute('aria-modal', 'true');
+    m.innerHTML = '<div class="wg-md"><button type="button" class="wg-md-x" aria-label="닫기">&times;</button>' +
+      '<div class="wg-md-ic"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l10 18H2zM12 10v5M12 18v.01"/></svg></div>' +
+      '<h3>' + NOTICE.title + '</h3>' +
+      NOTICE.lines.map(function (t) { return '<p>' + t + '</p>'; }).join('') +
+      '<p class="wg-md-note">' + NOTICE.note + '</p>' +
+      '<button type="button" class="wg-md-ok">확인</button></div>';
+    function close() {
+      doc.removeEventListener('keydown', onKey);
+      m.className = '';
+      setTimeout(function () { if (m.parentNode) m.parentNode.removeChild(m); }, 260);
+      if (prev && prev.focus) { try { prev.focus(); } catch (e) {} }
+    }
+    function onKey(e) { if (e.key === 'Escape' || e.key === 'Esc') close(); }
+    m.addEventListener('click', function (e) {
+      var c = e.target.className || '';
+      if (e.target === m || c === 'wg-md-x' || c === 'wg-md-ok') close();
+    });
+    doc.addEventListener('keydown', onKey);
+    doc.body.appendChild(m);
+    requestAnimationFrame(function () { requestAnimationFrame(function () { m.className = 'on'; }); });
+    var ok = m.querySelector('.wg-md-ok');
+    if (ok) ok.focus();
+  }
+
   /* PC 하단 고객서비스: 링크 주소로 항목을 알아내 아이콘 타일로 바꿉니다.
    * 모르는 항목은 원래 이미지를 그대로 둡니다. */
   function initSvcTiles() {
@@ -682,7 +740,15 @@
       wrap.lastChild.appendChild(doc.createTextNode(hit[2]));
       while (wrap.firstChild) box.appendChild(wrap.firstChild);
       box.className += ' wg-svc-t';
-      if (!a) li.appendChild(box);
+      if (!a) {
+        box.setAttribute('role', 'button');
+        box.setAttribute('tabindex', '0');
+        box.addEventListener('click', openNotice);
+        box.addEventListener('keydown', function (e) {
+          if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); openNotice(); }
+        });
+        li.appendChild(box);
+      }
       li.className += ' wg-svc';
     });
   }
