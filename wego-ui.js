@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var VERSION = '2.0.4';
+  var VERSION = '2.0.5';
   if (window.__wegoUI === VERSION) return;
   /* 예전 버전이 페이지에 남아 먼저 실행됐다면 그 스타일을 걷어내고 이 버전으로 교체 */
   var oldStyle = document.getElementById('wego-ui-style');
@@ -480,7 +480,7 @@
     P + '#wg-buybar{top:48px;transform:translateY(-110%);background:rgba(255,255,255,.95);-webkit-backdrop-filter:blur(12px);backdrop-filter:blur(12px);box-shadow:0 10px 30px rgba(7,31,87,.14)}',
     P + '#wg-buybar .wg-bb-in{width:1260px;padding:10px 0}',
     /* 그림자·떠오름이 부모 박스에서 잘리지 않게: 자르는 대신 float 만 감싸도록 변경 */
-    P + '.pr_desc,' + P + '.pg_best,' + P + '.cate_pick,' + P + '.con_bn01,' + P + '.con_bn02,' + P + '.cont_wrap,' + P + '.company{overflow:visible;display:flow-root}',
+    P + '.pr_desc,' + P + '.pg_best,' + P + '.cate_pick,' + P + '.con_bn01,' + P + '.con_bn02,' + P + '.cont_wrap,' + P + '.company,' + P + '#ft{overflow:visible;display:flow-root}',
     P + '.pr_desc ul,' + P + '.company ul,' + P + '.cate_pick ul,' + P + '.con_bn01 .bnr02 ul{overflow:visible;display:flow-root}',
     P + '.pr_desc li,' + P + '.company li{overflow:visible}',
     P + '.con_bn01 .bnr02,' + P + '.vi_info,' + P + '.vi_img_bx,' + P + '.vi_txt_bx{overflow:visible}',
@@ -563,7 +563,7 @@
     'html.wg .wg-sns-blog:hover{background:#03c75a;box-shadow:0 8px 18px rgba(3,199,90,.3)}',
     M + '.wg-sns{justify-content:center;margin:0;padding:16px 0 4px}',
     P + '#tnb_inner .tnb_ul li.wg-sns-top{padding:0 0 0 12px;height:38px;display:flex;align-items:center;gap:6px}',
-    P + '#tnb_inner .tnb_ul li.wg-sns-top a{width:26px;height:26px;padding:0;line-height:1;justify-content:center;border-radius:50%;background:#eef1f6;color:#5b6475}',
+    P + '#tnb_inner .tnb_ul li.wg-sns-top a{display:flex;align-items:center;width:26px;height:26px;padding:0;line-height:1;justify-content:center;border-radius:50%;background:#eef1f6;color:#5b6475}',
     P + '#tnb_inner .tnb_ul li.wg-sns-top a svg{width:15px;height:15px}',
     P + '#tnb_inner .tnb_ul li.wg-sns-top a:hover{color:#fff;transform:translateY(-1px)}'
   ]);
