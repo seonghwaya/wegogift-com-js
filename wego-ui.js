@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var VERSION = '2.0.8';
+  var VERSION = '2.1.0';
   if (window.__wegoUI === VERSION) return;
   /* 예전 버전이 페이지에 남아 먼저 실행됐다면 그 스타일을 걷어내고 이 버전으로 교체 */
   var oldStyle = document.getElementById('wego-ui-style');
@@ -23,6 +23,7 @@
     bg: '#f5f7fa',     // 옅은 배경
     accent: '#ffb800', // 강조(옐로)
     radius: '14px',
+    chat: true,        // 채널톡 채팅 상담 (false 면 끔)
     callBlock: true,   // PC 상단 좌측 전화번호를 움직이는 블록으로 표시
     dynamic: true,     // 그라데이션·스크롤 등장·따라다니는 구매바 등 움직임 레이어
     webfont: true      // Pretendard 웹폰트 사용 (false 면 시스템 폰트)
@@ -575,6 +576,29 @@
     P + '.wg-call-no span{display:inline-block;animation:wgDigit 3.5s ease-in-out infinite}'
   ]);
 
+  /* 채널톡 채팅 상담: 띄우는 버튼, 상품페이지 상담 버튼 */
+  if (THEME.chat !== false) common = common.concat([
+    '#wg-chat{position:fixed;z-index:1980;display:flex;align-items:center;justify-content:center;width:58px;height:58px;padding:0;border:0;border-radius:50%;background:' + GRAD + ';color:#fff;cursor:pointer;box-shadow:0 10px 24px rgba(29,79,216,.42);transition:transform .25s cubic-bezier(.2,.7,.2,1),box-shadow .25s}',
+    '#wg-chat:hover{transform:translateY(-3px) scale(1.06);box-shadow:0 16px 30px rgba(29,79,216,.5)}',
+    '#wg-chat svg,.wg-chat-cta svg,#wg-buybar .wg-bb-chat svg{fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;flex:none}',
+    '#wg-chat svg{width:28px;height:28px}',
+    '#wg-chat i{position:absolute;top:-3px;right:-3px;min-width:21px;height:21px;padding:0 6px;box-sizing:border-box;border-radius:11px;background:#ff3b30;color:#fff;font:700 11px/21px var(--wg-font);text-align:center;display:none}',
+    'html.wg-pc #wg-chat{right:22px;bottom:156px}',
+    'html.wg-m #wg-chat{left:12px;bottom:calc(68px + env(safe-area-inset-bottom));width:50px;height:50px;z-index:7980}',
+    'html.wg-m #wg-chat svg{width:24px;height:24px}',
+    'html.wg-m.wg-view #wg-chat{bottom:calc(138px + env(safe-area-inset-bottom))}',
+    'html.wg .wg-chat-cta{display:flex;align-items:center;justify-content:center;gap:10px;height:54px;margin-top:10px;box-sizing:border-box;border:1.5px solid #cfd9f3;border-radius:12px;background:#f5f8ff;color:var(--wg-navy);font-family:var(--wg-font);font-size:15px;font-weight:700;letter-spacing:-.3px;cursor:pointer;text-decoration:none!important;transition:background-color .2s,border-color .2s,transform .2s,box-shadow .2s}',
+    'html.wg .wg-chat-cta:hover{background:#eaf0ff;border-color:var(--wg-navy);transform:translateY(-2px);box-shadow:0 10px 22px rgba(10,44,120,.14)}',
+    'html.wg .wg-chat-cta svg{width:22px;height:22px}',
+    'html.wg .wg-chat-cta small{font-size:12.5px;font-weight:500;color:#6b7280;letter-spacing:-.2px}',
+    'html.wg-m .wg-chat-cta{clear:both;margin:8px .5% 0;height:52px}',
+    'html.wg-m .wg-chat-cta small{display:none}',
+    '#wg-buybar .wg-bb-chat{display:inline-flex;align-items:center;gap:6px;padding:0 16px;background:#f5f8ff;border:1.5px solid #cfd9f3;color:var(--wg-navy)}',
+    '#wg-buybar .wg-bb-chat svg{width:19px;height:19px}',
+    'html.wg-m #wg-buybar .wg-bb-chat{width:44px;padding:0;justify-content:center}',
+    'html.wg-m #wg-buybar .wg-bb-chat span{display:none}'
+  ]);
+
   /* PC·모바일 공통으로 쓰는 SNS 링크 스타일 */
   common = common.concat([
     'html.wg .wg-sns{display:flex;gap:8px;margin-top:14px;padding:2px 0 4px}',
@@ -680,6 +704,14 @@
       b.type = 'button'; b.className = cls; b.appendChild(doc.createTextNode(label));
       b.addEventListener('click', function () { target.click(); });
       inner.appendChild(b);
+    }
+    if (chatOn()) {
+      var cb = doc.createElement('button');
+      cb.type = 'button'; cb.className = 'wg-bb-chat';
+      cb.setAttribute('aria-label', '채팅 상담');
+      cb.innerHTML = CHAT_ICON + '<span>상담</span>';
+      cb.addEventListener('click', function () { openChat(); });
+      inner.appendChild(cb);
     }
     btn('wg-bb-cart', '장바구니', cart);
     btn('wg-bb-buy', '바로구매', buy);
@@ -900,10 +932,100 @@
     })();
   }
 
+  /* ---------------------------------------------------------- 채널톡 채팅 상담
+   * 상품페이지에서 상담을 열면 상품코드·상품명·수량·옵션·합계·주소가
+   * 입력란에 미리 채워집니다. 고객이 전송을 눌러야 실제로 보내집니다. */
+  var CHAT = { pluginKey: 'eb9ae76b-c7c2-4666-9e9a-d3f80f00451c' };
+  var CHAT_ICON = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5h16a1 1 0 0 1 1 1v10a1 1 0 0 1-1 1h-8l-5 4v-4H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1zM8 10h8M8 13.5h5"/></svg>';
+  function chatOn() { return THEME.chat !== false && !!CHAT.pluginKey; }
+  function txt(el) { return el ? String(el.textContent || '').replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '') : ''; }
+  function ownText(el) {
+    var t = '';
+    if (el) for (var n = el.firstChild; n; n = n.nextSibling) if (n.nodeType === 3) t += n.nodeValue;
+    return t.replace(/\s+/g, ' ').replace(/^\s+|\s+$/g, '');
+  }
+  function productInfo() {
+    if (page !== 'view') return null;
+    var name = ownText(doc.querySelector(isMobile ? '.sp_wrap .subject' : '.vi_txt_bx .tit'));
+    var code = txt(doc.querySelector('.tit_op .pr_code'));
+    if (!name && !code) return null;
+    var qty = doc.getElementById('ct_qty'), amt = doc.getElementById('sit_amt');
+    var opts = [];
+    $all('select.sel_option').forEach(function (sel) {
+      if (!sel.value) return;
+      var o = sel.options[sel.selectedIndex];
+      var box = sel.closest ? sel.closest(isMobile ? 'ul' : 'dl') : null;
+      var label = box ? ownText(box.querySelector(isMobile ? '.tlst' : 'dt')) : '';
+      opts.push((label ? label + ': ' : '') + txt(o));
+    });
+    return {
+      code: code, name: name,
+      qty: qty ? String(qty.value || '') : '',
+      total: amt && amt.value && amt.value !== '0' ? String(amt.value) : '',
+      opts: opts,
+      url: location.href.split('#')[0]
+    };
+  }
+  function openChat() {
+    if (!window.ChannelIO) return;
+    var p = productInfo();
+    if (!p) { window.ChannelIO('showMessenger'); return; }
+    var line2 = [];
+    if (p.qty) line2.push('수량 ' + p.qty + '개');
+    if (p.opts.length) line2.push(p.opts.join(', '));
+    if (p.total) line2.push('총 ' + p.total + '원(부가세 포함)');
+    var msg = (p.code ? '[' + p.code + '] ' : '') + p.name + ' 문의드립니다.' +
+      (line2.length ? '\n' + line2.join(' / ') : '') + '\n' + p.url;
+    window.ChannelIO('openChat', undefined, msg);
+  }
+  function initChat() {
+    if (!chatOn() || doc.getElementById('wg-chat')) return;
+    var w = window;
+    if (!w.ChannelIO) {
+      /* 채널톡 공식 로더 */
+      var ch = function () { ch.c(arguments); };
+      ch.q = []; ch.c = function (args) { ch.q.push(args); };
+      w.ChannelIO = ch;
+      var s = doc.createElement('script');
+      s.type = 'text/javascript'; s.async = true;
+      s.src = 'https://cdn.channel.io/plugin/ch-plugin-web.js';
+      (doc.head || root).appendChild(s);
+      w.ChannelIOInitialized = true;
+      w.ChannelIO('boot', { pluginKey: CHAT.pluginKey, hideChannelButtonOnBoot: true, language: 'ko' });
+    }
+    var b = doc.createElement('button');
+    b.type = 'button'; b.id = 'wg-chat';
+    b.setAttribute('aria-label', '채팅 상담');
+    b.title = '채팅 상담';
+    b.innerHTML = CHAT_ICON + '<i></i>';
+    b.addEventListener('click', openChat);
+    doc.body.appendChild(b);
+    var badge = b.lastChild;
+    try {
+      w.ChannelIO('onBadgeChanged', function (unread) {
+        var n = +unread || 0;
+        badge.style.display = n > 0 ? 'block' : 'none';
+        badge.textContent = n > 99 ? '99+' : String(n);
+      });
+    } catch (e) {}
+    /* 상품페이지: 구매 버튼 아래에 상담 버튼 */
+    var wrap = doc.querySelector(isMobile ? '.sp_btn' : '.vi_btn');
+    if (page === 'view' && wrap && !doc.querySelector('.wg-chat-cta')) {
+      var a = doc.createElement('a');
+      a.href = '#'; a.className = 'wg-chat-cta';
+      a.setAttribute('role', 'button');
+      a.innerHTML = CHAT_ICON + '<span>채팅으로 바로 상담하기</span><small>보고 계신 상품 정보가 함께 전달됩니다</small>';
+      a.addEventListener('click', function (e) { e.preventDefault(); openChat(); });
+      if (isMobile) wrap.appendChild(a);
+      else if (wrap.parentNode) wrap.parentNode.insertBefore(a, wrap.nextSibling);
+    }
+  }
+
   function enhance() {
     if (!doc.body) return;
     if (!isMobile) { try { initSvcTiles(); } catch (e) {} try { initCall(); } catch (e) {} }
     try { initSns(); } catch (e) {}
+    try { initChat(); } catch (e) {}
     if (THEME.dynamic === false) return;
     try { initProgress(); } catch (e) {}
     try { initReveal(); } catch (e) {}
