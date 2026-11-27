@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var VERSION = '2.0.6';
+  var VERSION = '2.0.7';
   if (window.__wegoUI === VERSION) return;
   /* 예전 버전이 페이지에 남아 먼저 실행됐다면 그 스타일을 걷어내고 이 버전으로 교체 */
   var oldStyle = document.getElementById('wego-ui-style');
@@ -552,6 +552,28 @@
     M + '.btn_top:active,' + M + '.btn_bottom:active{transform:scale(.9)}'
   ];
 
+  /* PC 상단 좌측 전화번호: 이미지 대신 움직이는 코드 블록 (initCall) */
+  pc = pc.concat([
+    '@keyframes wgRing{0%,55%,100%{transform:rotate(0)}5%,15%,25%,35%,45%{transform:rotate(-15deg)}10%,20%,30%,40%{transform:rotate(15deg)}}',
+    '@keyframes wgRipple{0%{transform:scale(1);opacity:.75}70%,100%{transform:scale(1.75);opacity:0}}',
+    '@keyframes wgDigit{0%,16%,100%{transform:none;color:var(--wg-ink)}6%{transform:translateY(-10px) scale(1.14);color:var(--wg-blue)}11%{transform:translateY(2px);color:var(--wg-navy)}}',
+    P + '.hd_lbn .wg-call-orig{display:none}',
+    P + '.wg-call{display:inline-grid;grid-template-columns:auto 1fr;column-gap:14px;row-gap:6px;align-items:center;width:264px;text-align:right;font-family:var(--wg-font)}',
+    P + '.wg-call a{text-decoration:none!important;color:inherit}',
+    P + '.wg-call-ic{position:relative;display:flex;align-items:center;justify-content:center;width:58px;height:58px;margin-left:4px;border-radius:50%;background:linear-gradient(135deg,#ffd54a,#ff9a1a);color:#fff!important;box-shadow:0 8px 18px rgba(255,154,26,.42);transition:transform .25s cubic-bezier(.2,.7,.2,1)}',
+    P + '.wg-call-ic:hover{transform:scale(1.08)}',
+    P + '.wg-call-ic svg{width:29px;height:29px;fill:currentColor;transform-origin:50% 50%;animation:wgRing 2.8s ease-in-out infinite}',
+    P + '.wg-call-ic:before,' + P + '.wg-call-ic:after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;border-radius:50%;border:2px solid #ffb800;pointer-events:none;animation:wgRipple 2.8s ease-out infinite}',
+    P + '.wg-call-ic:after{animation-delay:.6s}',
+    P + '.wg-call-sub{font-size:13px;line-height:1.3;color:#4b5563;letter-spacing:.2px}',
+    P + '.wg-call-sub a{display:block;letter-spacing:.6px;transition:color .15s}',
+    P + '.wg-call-sub a:hover{color:var(--wg-blue)}',
+    P + '.wg-call-lb{margin-top:3px;font-size:18px;font-weight:700;line-height:1.25;letter-spacing:-.4px;color:var(--wg-ink)}',
+    P + '.wg-call-lb b{font-weight:700;color:var(--wg-navy)}',
+    P + '.wg-call-no{grid-column:1 / -1;display:block;font-size:36px;font-weight:800;line-height:1.1;letter-spacing:-1.3px;white-space:nowrap;color:var(--wg-ink)}',
+    P + '.wg-call-no span{display:inline-block;animation:wgDigit 4.2s ease-in-out infinite}'
+  ]);
+
   /* PC·모바일 공통으로 쓰는 SNS 링크 스타일 */
   common = common.concat([
     'html.wg .wg-sns{display:flex;gap:8px;margin-top:14px;padding:2px 0 4px}',
@@ -817,9 +839,44 @@
     });
   }
 
+  /* PC 상단 좌측 전화번호 배너를 코드로 다시 그립니다. 번호는 CALL 만 고치면 됩니다. */
+  var CALL = { main: '010.2849.5945', direct: '070.4509.2513', directLabel: '다이렉트콜', label: ['친절상담', '대표번호'] };
+  function initCall() {
+    var cell = doc.querySelector('#hd_inner .hd_lbn');
+    if (!cell || cell.querySelector('.wg-call')) return;
+    var orig = cell.querySelector('a[href^="tel:"]');
+    if (!orig) return; // 전화 배너가 아닌 다른 배너로 바뀌었으면 건드리지 않음
+    function tel(n) { return 'tel:' + n.replace(/[^0-9]/g, ''); }
+    var box = doc.createElement('div');
+    box.className = 'wg-call';
+    box.innerHTML =
+      '<a class="wg-call-ic" aria-label="전화 걸기"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6.6 10.8c1.4 2.8 3.8 5.1 6.6 6.6l2.2-2.2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.6.6.6 0 1 .4 1 1V20c0 .6-.4 1-1 1C10.6 21 3 13.4 3 4c0-.6.4-1 1-1h3.5c.6 0 1 .4 1 1 0 1.3.2 2.5.6 3.6.1.3 0 .7-.2 1l-2.3 2.2z"/></svg></a>' +
+      '<div><div class="wg-call-sub"></div><div class="wg-call-lb"></div></div>' +
+      '<a class="wg-call-no"></a>';
+    box.querySelector('.wg-call-ic').href = tel(CALL.main);
+    var sub = box.querySelector('.wg-call-sub');
+    sub.appendChild(doc.createTextNode(CALL.directLabel));
+    var d = doc.createElement('a'); d.href = tel(CALL.direct); d.appendChild(doc.createTextNode(CALL.direct)); sub.appendChild(d);
+    var lb = box.querySelector('.wg-call-lb');
+    var b = doc.createElement('b'); b.appendChild(doc.createTextNode(CALL.label[0])); lb.appendChild(b);
+    lb.appendChild(doc.createTextNode(' ' + CALL.label[1]));
+    var no = box.querySelector('.wg-call-no');
+    no.href = tel(CALL.main);
+    no.setAttribute('aria-label', CALL.main);
+    for (var i = 0; i < CALL.main.length; i++) {
+      var sp = doc.createElement('span');
+      sp.setAttribute('aria-hidden', 'true');
+      sp.style.animationDelay = (i * 0.07).toFixed(2) + 's';
+      sp.appendChild(doc.createTextNode(CALL.main.charAt(i)));
+      no.appendChild(sp);
+    }
+    orig.className += ' wg-call-orig';
+    cell.appendChild(box);
+  }
+
   function enhance() {
     if (!doc.body) return;
-    if (!isMobile) { try { initSvcTiles(); } catch (e) {} }
+    if (!isMobile) { try { initSvcTiles(); } catch (e) {} try { initCall(); } catch (e) {} }
     try { initSns(); } catch (e) {}
     if (THEME.dynamic === false) return;
     try { initProgress(); } catch (e) {}
