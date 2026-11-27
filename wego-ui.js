@@ -7,7 +7,7 @@
  */
 (function () {
   'use strict';
-  var VERSION = '2.0.7';
+  var VERSION = '2.0.8';
   if (window.__wegoUI === VERSION) return;
   /* 예전 버전이 페이지에 남아 먼저 실행됐다면 그 스타일을 걷어내고 이 버전으로 교체 */
   var oldStyle = document.getElementById('wego-ui-style');
@@ -23,6 +23,7 @@
     bg: '#f5f7fa',     // 옅은 배경
     accent: '#ffb800', // 강조(옐로)
     radius: '14px',
+    callBlock: true,   // PC 상단 좌측 전화번호를 움직이는 블록으로 표시
     dynamic: true,     // 그라데이션·스크롤 등장·따라다니는 구매바 등 움직임 레이어
     webfont: true      // Pretendard 웹폰트 사용 (false 면 시스템 폰트)
   };
@@ -553,17 +554,17 @@
   ];
 
   /* PC 상단 좌측 전화번호: 이미지 대신 움직이는 코드 블록 (initCall) */
-  pc = pc.concat([
+  if (THEME.callBlock !== false) pc = pc.concat([
     '@keyframes wgRing{0%,55%,100%{transform:rotate(0)}5%,15%,25%,35%,45%{transform:rotate(-15deg)}10%,20%,30%,40%{transform:rotate(15deg)}}',
     '@keyframes wgRipple{0%{transform:scale(1);opacity:.75}70%,100%{transform:scale(1.75);opacity:0}}',
     '@keyframes wgDigit{0%,16%,100%{transform:none;color:var(--wg-ink)}6%{transform:translateY(-10px) scale(1.14);color:var(--wg-blue)}11%{transform:translateY(2px);color:var(--wg-navy)}}',
-    P + '.hd_lbn .wg-call-orig{display:none}',
+    P + '#hd_inner .hd_lbn>a[href^="tel:"],' + P + '.hd_lbn .wg-call-orig{display:none}',
     P + '.wg-call{display:inline-grid;grid-template-columns:auto 1fr;column-gap:14px;row-gap:6px;align-items:center;width:264px;text-align:right;font-family:var(--wg-font)}',
     P + '.wg-call a{text-decoration:none!important;color:inherit}',
     P + '.wg-call-ic{position:relative;display:flex;align-items:center;justify-content:center;width:58px;height:58px;margin-left:4px;border-radius:50%;background:linear-gradient(135deg,#ffd54a,#ff9a1a);color:#fff!important;box-shadow:0 8px 18px rgba(255,154,26,.42);transition:transform .25s cubic-bezier(.2,.7,.2,1)}',
     P + '.wg-call-ic:hover{transform:scale(1.08)}',
-    P + '.wg-call-ic svg{width:29px;height:29px;fill:currentColor;transform-origin:50% 50%;animation:wgRing 2.8s ease-in-out infinite}',
-    P + '.wg-call-ic:before,' + P + '.wg-call-ic:after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;border-radius:50%;border:2px solid #ffb800;pointer-events:none;animation:wgRipple 2.8s ease-out infinite}',
+    P + '.wg-call-ic svg{width:29px;height:29px;fill:currentColor;transform-origin:50% 50%;animation:wgRing 3.5s ease-in-out infinite}',
+    P + '.wg-call-ic:before,' + P + '.wg-call-ic:after{content:"";position:absolute;top:0;left:0;right:0;bottom:0;border-radius:50%;border:2px solid #ffb800;pointer-events:none;animation:wgRipple 3.5s ease-out infinite}',
     P + '.wg-call-ic:after{animation-delay:.6s}',
     P + '.wg-call-sub{font-size:13px;line-height:1.3;color:#4b5563;letter-spacing:.2px}',
     P + '.wg-call-sub a{display:block;letter-spacing:.6px;transition:color .15s}',
@@ -571,7 +572,7 @@
     P + '.wg-call-lb{margin-top:3px;font-size:18px;font-weight:700;line-height:1.25;letter-spacing:-.4px;color:var(--wg-ink)}',
     P + '.wg-call-lb b{font-weight:700;color:var(--wg-navy)}',
     P + '.wg-call-no{grid-column:1 / -1;display:block;font-size:36px;font-weight:800;line-height:1.1;letter-spacing:-1.3px;white-space:nowrap;color:var(--wg-ink)}',
-    P + '.wg-call-no span{display:inline-block;animation:wgDigit 4.2s ease-in-out infinite}'
+    P + '.wg-call-no span{display:inline-block;animation:wgDigit 3.5s ease-in-out infinite}'
   ]);
 
   /* PC·모바일 공통으로 쓰는 SNS 링크 스타일 */
@@ -842,10 +843,23 @@
   /* PC 상단 좌측 전화번호 배너를 코드로 다시 그립니다. 번호는 CALL 만 고치면 됩니다. */
   var CALL = { main: '010.2849.5945', direct: '070.4509.2513', directLabel: '다이렉트콜', label: ['친절상담', '대표번호'] };
   function initCall() {
-    var cell = doc.querySelector('#hd_inner .hd_lbn');
-    if (!cell || cell.querySelector('.wg-call')) return;
+    if (THEME.callBlock === false) return true;
+    var inner = doc.getElementById('hd_inner');
+    if (!inner) return false; // 아직 헤더가 그려지기 전
+    var cell = inner.querySelector('.hd_lbn');
+    if (!cell) {
+      /* 관리자에서 배너를 지워 칸 자체가 없으면 새로 만듭니다 (검색 영역이 나온 뒤에만 판단) */
+      if (!doc.getElementById('hd_sch')) return false;
+      cell = doc.createElement('div');
+      cell.className = 'hd_lbn';
+      inner.insertBefore(cell, inner.firstChild);
+    }
+    if (cell.querySelector('.wg-call')) return true;
     var orig = cell.querySelector('a[href^="tel:"]');
-    if (!orig) return; // 전화 배너가 아닌 다른 배너로 바뀌었으면 건드리지 않음
+    /* 전화 배너가 아닌 다른 배너(링크·이미지)가 들어 있으면 건드리지 않음 */
+    if (!orig && cell.querySelector('a,img')) return true;
+    /* 칸이 비어 보여도 아직 내용이 읽히는 중일 수 있으니, 다음 영역이 나올 때까지 기다림 */
+    if (!orig && doc.readyState === 'loading' && !doc.getElementById('hd_sch')) return false;
     function tel(n) { return 'tel:' + n.replace(/[^0-9]/g, ''); }
     var box = doc.createElement('div');
     box.className = 'wg-call';
@@ -870,8 +884,20 @@
       sp.appendChild(doc.createTextNode(CALL.main.charAt(i)));
       no.appendChild(sp);
     }
-    orig.className += ' wg-call-orig';
+    if (orig) orig.className += ' wg-call-orig';
     cell.appendChild(box);
+    return true;
+  }
+  /* 헤더가 그려지는 즉시 실행해서 원래 이미지가 잠깐 보였다 바뀌는 일을 없앱니다 */
+  function initCallEarly() {
+    var tries = 0;
+    (function tick() {
+      var done = false;
+      try { done = initCall(); } catch (e) { done = true; }
+      if (done || ++tries > 600) return;
+      if (doc.readyState !== 'loading') { try { initCall(); } catch (e) {} return; }
+      (window.requestAnimationFrame || setTimeout)(tick, 16);
+    })();
   }
 
   function enhance() {
@@ -892,6 +918,7 @@
     else setTimeout(fn, 60);
   }
   whenReady(enhance);
+  if (!isMobile) initCallEarly();
 
   /* ------------------------------------------------------------- 스타일 주입 */
   function inject() {
